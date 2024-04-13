@@ -1,0 +1,58 @@
+#!/bin/sh
+
+# follow  the project guide the run the scripts
+
+
+# flush iptables
+$sudo IPTABLES -F 
+$sudo IPTABLES -X 
+$sudo IPTABLES -F -t nat
+
+
+# Blacklist
+$sudo IPTABLES -P INPUT ACCEPT
+$sudo IPTABLES -P OUTPUT ACCEPT
+$sudo IPTABLES -P FORWARD ACCEPT
+
+
+# Whitelist (Whitelist is preferred)
+$sudo IPTABLES -P INPUT DROP
+$sudo IPTABLES -P OUTPUT DROP
+$sudo IPTABLES -P FORWARD DROP
+
+# fiter rules
+$iptables -P OUTPUT ACCEPT
+$iptables -A INPUT -s 192.168.0.10 -j ACCEPT
+
+# Nat rules
+$sudo iptables -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+$sudo iptables -P FORWARD ACCEPT
+$sudo iptables -P INPUT ACCEPT
+$sudo iptables -P OUTPUT ACCEPT
+
+# port 80 (http)
+$sudo iptables -t nat -A PREROUTING -p tcp -m tcp --dport 80 -j DNAT --to-destination 10.0.0.10:80
+$sudo iptables -t nat -A POSTROUTING -d 10.0.0.10/8 -p tcp -m tcp --dport 80 -j MASQUERADE
+
+# port 20 and 21(ftp)
+$sudo iptables -t nat -A PREROUTING -p tcp -m tcp --dport 20 -j DNAT --to-destination 10.0.0.10:20
+$sudo iptables -t nat -A POSTROUTING -d 10.0.0.10/8 -p tcp -m tcp --dport 20 -j MASQUERADE
+
+$sudo iptables -t nat -A PREROUTING -p tcp -m tcp --dport 21 -j DNAT --to-destination 10.0.0.10:21
+$sudo iptables -t nat -A POSTROUTING -d 10.0.0.10/8 -p tcp -m tcp --dport 21 -j MASQUERADE
+
+# port 22(ssh)
+$sudo iptables -t nat -A PREROUTING -p tcp -m tcp --dport 22 -j DNAT --to-destination 10.0.0.10:22
+$sudo iptables -t nat -A POSTROUTING -d 10.0.0.10/8 -p tcp -m tcp --dport 22 -j MASQUERADE
+
+# port 443(https)
+$sudo iptables -t nat -A PREROUTING -p tcp -m tcp --dport 443 -j DNAT --to-destination 8.8.8.8:443
+$sudo iptables -t nat -A POSTROUTING -d 8.8.8.8/24 -p tcp -m tcp --dport 443 -j MASQUERADE
+
+
+# server connect to outside network
+$ sudo iptables -A FORWARD -m --state ESTABLISHED,RELATED -j ACCEPT
+$ sudo iptables -t nat -A POSTROUTING -s 10.0.0.10/8 -j MASQUERADE
+$ sudo iptables -A FORWARD -s 10.0.0.10 -j ACCEPT
+
+
